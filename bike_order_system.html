@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自転車販売・客注システム</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;font-size:14px;background:#f5f5f0;color:#1a1a18;min-height:100vh}
+/* ===== LAYOUT ===== */
+.app{max-width:480px;margin:0 auto;background:#f5f5f0;min-height:100vh}
+.admin-app{max-width:900px;margin:0 auto;background:#f5f5f0;min-height:100vh;padding:20px}
+/* ===== HEADER ===== */
+.header{background:#fff;border-bottom:0.5px solid #e0dfd8;padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10}
+.header-back{background:none;border:none;color:#888;cursor:pointer;font-size:20px;padding:4px;line-height:1}
+.header-title{font-size:15px;font-weight:600}
+.header-badge{margin-left:auto;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600}
+.badge-order{background:#fff3cd;color:#856404}
+.badge-sale{background:#d1edde;color:#0a6640}
+/* ===== NAV ===== */
+.nav{background:#1a1a18;padding:0}
+.nav-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;gap:0}
+.nav-brand{color:#fff;font-size:14px;font-weight:700;padding:12px 20px;border-right:1px solid #333}
+.nav-link{color:#aaa;font-size:13px;padding:12px 16px;cursor:pointer;transition:color .15s;text-decoration:none;display:block}
+.nav-link:hover,.nav-link.active{color:#fff}
+/* ===== WRAP ===== */
+.wrap{padding:14px;display:flex;flex-direction:column;gap:12px}
+/* ===== SCREEN ===== */
+.screen{display:none}
+.screen.active{display:block}
+/* ===== STEPS ===== */
+.steps{display:flex;align-items:center;margin-bottom:4px}
+.step{display:flex;align-items:center;gap:5px;font-size:12px;color:#aaa}
+.step.active{color:#0066cc;font-weight:600}
+.step.done{color:#0a6640}
+.step-dot{width:20px;height:20px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.step.active .step-dot{background:#e6f0fb;border-color:#0066cc}
+.step.done .step-dot{background:#d1edde;border-color:#0a6640}
+.step-line{flex:1;height:1px;background:#ddd;margin:0 4px}
+/* ===== CARD ===== */
+.card{background:#fff;border-radius:12px;border:0.5px solid #e0dfd8;overflow:hidden}
+.card-header{padding:11px 14px;border-bottom:0.5px solid #e0dfd8;font-size:13px;font-weight:600;color:#555;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.card-header-left{display:flex;align-items:center;gap:6px}
+.card-body{padding:14px;display:flex;flex-direction:column;gap:12px}
+/* ===== FORM ===== */
+.field{display:flex;flex-direction:column;gap:5px}
+.label{font-size:12px;color:#666;font-weight:600}
+.req{color:#cc3300;margin-left:2px}
+input[type=text],input[type=tel],select,textarea{width:100%;padding:9px 12px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a18;font-size:14px;font-family:inherit;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:#0066cc}
+textarea{resize:none;height:72px}
+/* ===== SEARCH ===== */
+.search-wrap{position:relative}
+.search-wrap input{padding-left:36px}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#aaa;font-size:16px}
+/* ===== PRODUCT LIST ===== */
+.product-list{display:flex;flex-direction:column;gap:8px}
+.product-item{background:#fff;border:0.5px solid #e0dfd8;border-radius:10px;padding:12px 14px;cursor:pointer;transition:border-color .15s,background .15s;display:flex;align-items:center;gap:12px}
+.product-item:hover{border-color:#0066cc;background:#f0f6ff}
+.product-thumb{width:44px;height:44px;border-radius:8px;background:#f5f5f0;border:0.5px solid #e0dfd8;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.product-info{flex:1;min-width:0}
+.product-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.product-sub{font-size:11px;color:#888;margin-top:2px}
+.product-status{flex-shrink:0;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600}
+.status-in{background:#d1edde;color:#0a6640}
+.status-low{background:#fff3cd;color:#856404}
+.status-out{background:#fce8e8;color:#cc3300}
+/* ===== NO RESULT ===== */
+.no-result{text-align:center;padding:20px 16px;color:#999;font-size:13px}
+/* ===== TYPE SELECT ===== */
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.type-btn{border:1.5px solid #ddd;border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s;background:#fff}
+.type-btn:hover,.type-btn.selected{border-color:#0066cc;background:#f0f6ff}
+.type-btn-icon{font-size:22px;margin-bottom:4px}
+.type-btn-label{font-size:13px;font-weight:600}
+.type-btn-sub{font-size:11px;color:#888;margin-top:2px}
+/* ===== CUSTOMER FOUND ===== */
+.customer-found{background:#d1edde;border:0.5px solid #0a6640;border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px}
+.customer-found-name{font-size:13px;font-weight:600;color:#0a6640}
+.customer-found-sub{font-size:11px;color:#0a6640;opacity:.8}
+/* ===== CONFIRM TABLE ===== */
+.confirm-table{width:100%;border-collapse:collapse;font-size:13px}
+.confirm-table tr{border-bottom:0.5px solid #eee}
+.confirm-table tr:last-child{border-bottom:none}
+.confirm-table td{padding:8px 0}
+.confirm-table td:first-child{color:#888;width:100px}
+.confirm-table td:last-child{font-weight:600;text-align:right}
+/* ===== BUTTONS ===== */
+.btn{width:100%;padding:11px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s;font-family:inherit}
+.btn:active{opacity:.85}
+.btn-primary{background:#0066cc;color:#fff}
+.btn-secondary{background:#fff;border:0.5px solid #ccc;color:#333}
+.btn-order{background:#fff3cd;color:#856404;border:1px solid #d4a200}
+.btn-sm{padding:5px 12px;font-size:12px;width:auto;border-radius:6px}
+.btn-success{background:#0a6640;color:#fff}
+.btn-danger-sm{background:#fce8e8;color:#cc3300;border:0.5px solid #cc3300}
+.btn:disabled{opacity:.4;cursor:default}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+/* ===== COMPLETE ===== */
+.complete-icon{text-align:center;font-size:48px;padding:8px 0}
+.complete-title{text-align:center;font-size:16px;font-weight:700}
+.complete-sub{text-align:center;font-size:13px;color:#888}
+.order-number{text-align:center;font-size:24px;font-weight:700;color:#0066cc;letter-spacing:3px;padding:8px 0}
+/* ===== BOXES ===== */
+.info-box{background:#e6f0fb;border:0.5px solid #0066cc;border-radius:8px;padding:10px 12px;font-size:12px;color:#0044aa;display:flex;gap:8px;align-items:flex-start}
+.warn-box{background:#fff3cd;border:0.5px solid #d4a200;border-radius:8px;padding:10px 12px;font-size:12px;color:#856404;display:flex;gap:8px}
+/* ===== ADMIN ===== */
+.admin-title{font-size:20px;font-weight:700;margin-bottom:4px}
+.admin-sub{font-size:13px;color:#888;margin-bottom:20px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:#fff;border-radius:12px;border:0.5px solid #e0dfd8;padding:16px}
+.stat-label{font-size:12px;color:#888;margin-bottom:6px}
+.stat-value{font-size:24px;font-weight:700}
+.stat-value.blue{color:#0066cc}
+.stat-value.orange{color:#856404}
+.stat-value.green{color:#0a6640}
+.stat-value.gray{color:#555}
+.filter-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.filter-btn{padding:6px 14px;border-radius:20px;border:0.5px solid #ccc;background:#fff;font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s}
+.filter-btn.active,.filter-btn:hover{background:#0066cc;color:#fff;border-color:#0066cc}
+.orders-table{width:100%;border-collapse:collapse;font-size:13px}
+.orders-table th{padding:10px 12px;text-align:left;font-size:12px;color:#888;font-weight:600;border-bottom:1px solid #e0dfd8;background:#fafaf8}
+.orders-table td{padding:10px 12px;border-bottom:0.5px solid #eee;vertical-align:middle}
+.orders-table tr:last-child td{border-bottom:none}
+.orders-table tr:hover td{background:#fafaf8}
+.status-badge{display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600}
+.sb-waiting{background:#fff3cd;color:#856404}
+.sb-ordered{background:#e6f0fb;color:#0044aa}
+.sb-arrived{background:#e8f5e9;color:#1b5e20}
+.sb-done{background:#eee;color:#555}
+.action-btns{display:flex;gap:6px}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;padding:24px;width:380px;max-width:90vw}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:16px}
+.modal-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #eee;font-size:13px}
+.modal-row:last-child{border-bottom:none}
+.modal-row-label{color:#888}
+.modal-row-val{font-weight:600}
+.arch-box{background:#fff;border-radius:12px;border:0.5px solid #e0dfd8;padding:20px;margin-bottom:16px}
+.arch-title{font-size:14px;font-weight:700;margin-bottom:12px;color:#333}
+.arch-layer{display:flex;gap:0;align-items:stretch;margin-bottom:8px}
+.arch-label{width:100px;font-size:11px;color:#888;font-weight:600;display:flex;align-items:center;flex-shrink:0}
+.arch-items{display:flex;gap:8px;flex-wrap:wrap;flex:1}
+.arch-item{background:#f0f6ff;border:0.5px solid #0066cc;border-radius:8px;padding:6px 12px;font-size:12px;color:#0044aa;font-weight:600}
+.arch-item.green{background:#d1edde;border-color:#0a6640;color:#0a6640}
+.arch-item.orange{background:#fff3cd;border-color:#d4a200;color:#856404}
+.arch-item.gray{background:#f5f5f0;border-color:#ccc;color:#555}
+.arch-arrow{text-align:center;color:#ccc;font-size:18px;margin:2px 0 6px}
+</style>
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav class="nav">
+  <div class="nav-inner">
+    <span class="nav-brand">🚲 自転車販売システム</span>
+    <a class="nav-link active" id="nav-staff" onclick="switchMode('staff')">スタッフ画面</a>
+    <a class="nav-link" id="nav-admin" onclick="switchMode('admin')">管理画面</a>
+    <a class="nav-link" id="nav-arch" onclick="switchMode('arch')">システム構成</a>
+  </div>
+</nav>
+
+<!-- ===================== STAFF MODE ===================== -->
+<div id="mode-staff">
+<div class="app">
+
+<!-- S1: 商品検索 -->
+<div class="screen active" id="s1">
+  <div class="header">
+    <span class="header-title">🚲 自転車販売・客注</span>
+  </div>
+  <div class="wrap">
+    <div class="steps">
+      <div class="step active"><div class="step-dot">1</div><span>商品検索</span></div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-dot">2</div><span>顧客情報</span></div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-dot">3</div><span>確認・登録</span></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-header-left">🔍 商品名で検索</div></div>
+      <div class="card-body">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" placeholder="例：ブリヂストン、電動、26インチ…" oninput="doSearch(this.value)">
+        </div>
+      </div>
+    </div>
+    <div id="result-area"></div>
+  </div>
+</div>
+
+<!-- S2: 顧客情報 -->
+<div class="screen" id="s2">
+  <div class="header">
+    <button class="header-back" onclick="goTo('s1')">←</button>
+    <span class="header-title">顧客情報の入力</span>
+    <span class="header-badge" id="s2-badge"></span>
+  </div>
+  <div class="wrap">
+    <div class="steps">
+      <div class="step done"><div class="step-dot">✓</div><span>商品検索</span></div>
+      <div class="step-line"></div>
+      <div class="step active"><div class="step-dot">2</div><span>顧客情報</span></div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-dot">3</div><span>確認・登録</span></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-header-left">👤 顧客タイプを選択</div></div>
+      <div class="card-body">
+        <div class="type-grid">
+          <div class="type-btn" id="type-id" onclick="selectType('id')">
+            <div class="type-btn-icon">🪪</div>
+            <div class="type-btn-label">IDあり</div>
+            <div class="type-btn-sub">会員・登録済み</div>
+          </div>
+          <div class="type-btn" id="type-noid" onclick="selectType('noid')">
+            <div class="type-btn-icon">👤</div>
+            <div class="type-btn-label">IDなし</div>
+            <div class="type-btn-sub">新規・非会員</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="form-id" style="display:none">
+      <div class="card-header"><div class="card-header-left">🪪 会員ID検索</div></div>
+      <div class="card-body">
+        <div class="field">
+          <label class="label">会員ID <span class="req">*</span></label>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="member-id" placeholder="例：HC-00123456" style="flex:1">
+            <button class="btn btn-secondary" style="width:auto;padding:9px 14px;white-space:nowrap" onclick="searchMember()">検索</button>
+          </div>
+        </div>
+        <div id="member-result"></div>
+      </div>
+    </div>
+    <div class="card" id="form-noid" style="display:none">
+      <div class="card-header"><div class="card-header-left">📝 顧客情報を入力</div></div>
+      <div class="card-body">
+        <div class="field">
+          <label class="label">お名前 <span class="req">*</span></label>
+          <input type="text" id="name-input" placeholder="例：山田 太郎" oninput="checkNoid()">
+        </div>
+        <div class="field">
+          <label class="label">電話番号 <span class="req">*</span></label>
+          <input type="tel" id="tel-input" placeholder="例：090-1234-5678" oninput="checkNoid()">
+        </div>
+        <div class="field">
+          <label class="label">備考・要望</label>
+          <textarea id="note-input" placeholder="色の希望、サイズ等…"></textarea>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="btn-next2" onclick="goToConfirm()" disabled>次へ：内容確認 →</button>
+  </div>
+</div>
+
+<!-- S3: 確認 -->
+<div class="screen" id="s3">
+  <div class="header">
+    <button class="header-back" onclick="goTo('s2')">←</button>
+    <span class="header-title">内容確認・登録</span>
+  </div>
+  <div class="wrap">
+    <div class="steps">
+      <div class="step done"><div class="step-dot">✓</div><span>商品検索</span></div>
+      <div class="step-line"></div>
+      <div class="step done"><div class="step-dot">✓</div><span>顧客情報</span></div>
+      <div class="step-line"></div>
+      <div class="step active"><div class="step-dot">3</div><span>確認・登録</span></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-header-left">📋 登録内容</div></div>
+      <div class="card-body">
+        <table class="confirm-table" id="confirm-table"></table>
+      </div>
+    </div>
+    <div class="info-box">ℹ️ 登録後、入荷連絡はスタッフが電話で行います。入荷目安は3〜7営業日です。</div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo('s2')">修正する</button>
+      <button class="btn btn-primary" onclick="register()">客注登録する ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- S4: 完了 -->
+<div class="screen" id="s4">
+  <div class="header">
+    <span class="header-title">登録完了</span>
+  </div>
+  <div class="wrap">
+    <div class="card">
+      <div class="card-body" style="gap:8px;padding:20px 14px">
+        <div class="complete-icon">✅</div>
+        <div class="complete-title">客注登録が完了しました</div>
+        <div class="complete-sub">受付番号</div>
+        <div class="order-number" id="order-number"></div>
+        <div class="complete-sub">お客様への入荷連絡はスタッフが行います</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-header-left">📄 登録内容</div></div>
+      <div class="card-body">
+        <table class="confirm-table" id="complete-table"></table>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="reset()">トップに戻る</button>
+  </div>
+</div>
+
+</div><!-- /.app -->
+</div><!-- /#mode-staff -->
+
+<!-- ===================== ADMIN MODE ===================== -->
+<div id="mode-admin" style="display:none">
+<div class="admin-app">
+  <div class="admin-title">📊 客注管理ダッシュボード</div>
+  <div class="admin-sub">客注受付・ステータス管理・入荷連絡</div>
+
+  <!-- KPI -->
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-label">受付待ち</div><div class="stat-value orange" id="kpi-waiting">0</div></div>
+    <div class="stat-card"><div class="stat-label">発注済み</div><div class="stat-value blue" id="kpi-ordered">0</div></div>
+    <div class="stat-card"><div class="stat-label">入荷済み</div><div class="stat-value green" id="kpi-arrived">0</div></div>
+    <div class="stat-card"><div class="stat-label">引渡し完了</div><div class="stat-value gray" id="kpi-done">0</div></div>
+  </div>
+
+  <!-- Filter -->
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="filterOrders('all',this)">すべて</button>
+    <button class="filter-btn" onclick="filterOrders('waiting',this)">受付待ち</button>
+    <button class="filter-btn" onclick="filterOrders('ordered',this)">発注済み</button>
+    <button class="filter-btn" onclick="filterOrders('arrived',this)">入荷済み</button>
+    <button class="filter-btn" onclick="filterOrders('done',this)">完了</button>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-left">📋 客注一覧</div>
+      <span style="font-size:12px;color:#888" id="order-count"></span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>受付番号</th><th>受付日時</th><th>商品名</th><th>顧客名</th><th>電話番号</th><th>ステータス</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="orders-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===================== ARCH MODE ===================== -->
+<div id="mode-arch" style="display:none">
+<div class="admin-app">
+  <div class="admin-title">🏗️ システム構成と技術スタック</div>
+  <div class="admin-sub">このプロトタイプの現在地と、本番化に必要な追加要素</div>
+
+  <div class="arch-box">
+    <div class="arch-title">現在のプロトタイプ構成（フロントエンドのみ）</div>
+    <div class="arch-layer">
+      <div class="arch-label">ユーザー</div>
+      <div class="arch-items"><span class="arch-item gray">スタッフ（店頭端末）</span><span class="arch-item gray">店長（管理PC）</span></div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-layer">
+      <div class="arch-label">フロント</div>
+      <div class="arch-items"><span class="arch-item">HTML / CSS / JavaScript</span><span class="arch-item">単一ファイル（SPA）</span></div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-layer">
+      <div class="arch-label">データ</div>
+      <div class="arch-items"><span class="arch-item orange">localStorage（ブラウザ内）</span><span class="arch-item gray">リロードで消えない ※同端末のみ</span></div>
+    </div>
+    <div style="margin-top:12px;padding:10px;background:#fff3cd;border-radius:8px;font-size:12px;color:#856404">
+      ⚠️ 現在はブラウザ内にデータが保存されるため、複数端末での共有・リアルタイム同期には非対応です。
+    </div>
+  </div>
+
+  <div class="arch-box">
+    <div class="arch-title">本番化に必要な追加要素</div>
+    <div class="arch-layer">
+      <div class="arch-label">ユーザー</div>
+      <div class="arch-items"><span class="arch-item gray">スタッフ（店頭タブレット）</span><span class="arch-item gray">店長（管理PC）</span></div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-layer">
+      <div class="arch-label">ホスティング</div>
+      <div class="arch-items"><span class="arch-item">Vercel（無料）</span><span class="arch-item gray">URLが発行される</span></div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-layer">
+      <div class="arch-label">バックエンド</div>
+      <div class="arch-items"><span class="arch-item">Supabase（無料枠あり）</span><span class="arch-item gray">REST API自動生成</span></div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-layer">
+      <div class="arch-label">DB</div>
+      <div class="arch-items"><span class="arch-item green">PostgreSQL（Supabase内蔵）</span></div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-layer">
+      <div class="arch-label">将来AI拡張</div>
+      <div class="arch-items"><span class="arch-item orange">Claude API / OpenAI API</span><span class="arch-item gray">商品提案・問い合わせ自動応答</span></div>
+    </div>
+  </div>
+
+  <div class="arch-box">
+    <div class="arch-title">DBテーブル設計（Supabase想定）</div>
+    <div style="font-size:12px;color:#555;line-height:1.8;font-family:monospace;background:#f5f5f0;padding:14px;border-radius:8px">
+      <strong>orders（客注テーブル）</strong><br>
+      id          UUID PRIMARY KEY<br>
+      order_no    TEXT  （例: KJ-12345）<br>
+      product_name TEXT<br>
+      maker       TEXT<br>
+      customer_name TEXT<br>
+      customer_tel TEXT<br>
+      member_id   TEXT  （会員の場合）<br>
+      status      TEXT  （waiting / ordered / arrived / done）<br>
+      note        TEXT<br>
+      created_at  TIMESTAMP<br>
+      updated_at  TIMESTAMP<br>
+      <br>
+      <strong>products（商品マスタ）</strong><br>
+      id          UUID PRIMARY KEY<br>
+      name        TEXT<br>
+      maker       TEXT<br>
+      price       INTEGER<br>
+      stock_status TEXT  （in / low / out）<br>
+      <br>
+      <strong>members（会員マスタ）</strong><br>
+      member_id   TEXT PRIMARY KEY<br>
+      name        TEXT<br>
+      tel         TEXT<br>
+      rank        TEXT
+    </div>
+  </div>
+
+  <div class="arch-box">
+    <div class="arch-title">Vercelデプロイ手順（3ステップ）</div>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <span style="background:#0066cc;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</span>
+        <div><strong>GitHubにHTMLをpush</strong><br><span style="color:#888">github.comでリポジトリを作成 → このHTMLファイルをアップロード</span></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <span style="background:#0066cc;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</span>
+        <div><strong>Vercelでインポート</strong><br><span style="color:#888">vercel.com → 「Add New Project」→ GitHubリポジトリを選択 → Deploy</span></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <span style="background:#0a6640;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</span>
+        <div><strong>URLが発行される</strong><br><span style="color:#888">https://your-project.vercel.app のURLで即日公開。無料。</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-title">📋 客注詳細</div>
+    <div id="modal-content"></div>
+    <div style="margin-top:16px;display:flex;gap:8px">
+      <button class="btn btn-secondary" onclick="closeModal()">閉じる</button>
+      <button class="btn btn-primary" id="modal-next-btn" onclick="advanceStatus()">ステータスを進める →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const PRODUCTS=[
+  {id:1,name:'ブリヂストン アルベルト 26インチ',maker:'ブリヂストン',price:'¥58,000',stock:'in',icon:'🚲'},
+  {id:2,name:'パナソニック ビビDX 26インチ 電動',maker:'パナソニック',price:'¥118,000',stock:'in',icon:'⚡'},
+  {id:3,name:'ヤマハ PAS CITY-X 26インチ 電動',maker:'ヤマハ',price:'¥112,000',stock:'low',icon:'⚡'},
+  {id:4,name:'ブリヂストン カジュナ 27インチ',maker:'ブリヂストン',price:'¥42,000',stock:'in',icon:'🚲'},
+  {id:5,name:'マルキン シティサイクル 26インチ',maker:'マルキン',price:'¥18,800',stock:'out',icon:'🚲'},
+  {id:6,name:'あさひ オフィスプレスU 27インチ',maker:'あさひ',price:'¥32,000',stock:'in',icon:'🚲'},
+];
+const MEMBERS={
+  'HC-00123456':{name:'田中 花子',tel:'090-1111-2222',rank:'ゴールド会員'},
+  'HC-00234567':{name:'鈴木 一郎',tel:'080-3333-4444',rank:'シルバー会員'},
+};
+
+// ===== STATE =====
+let st={product:null,isOrder:false,cType:null,cData:{}};
+let currentFilter='all';
+let currentModalId=null;
+
+// ===== ORDERS (localStorage) =====
+function getOrders(){try{return JSON.parse(localStorage.getItem('bike_orders')||'[]');}catch{return[];}}
+function saveOrders(o){localStorage.setItem('bike_orders',JSON.stringify(o));}
+function addOrder(o){const arr=getOrders();arr.unshift(o);saveOrders(arr);}
+
+// Seed demo data if empty
+(function(){
+  if(getOrders().length===0){
+    const demo=[
+      {id:'d1',orderNo:'KJ-10001',productName:'マルキン シティサイクル 26インチ',maker:'マルキン',customerName:'佐藤 次郎',tel:'080-0001-0001',memberId:'',note:'赤希望',status:'arrived',createdAt:'2026-06-05 10:23'},
+      {id:'d2',orderNo:'KJ-10002',productName:'ヤマハ PAS CITY-X 26インチ 電動',maker:'ヤマハ',customerName:'田中 花子',tel:'090-1111-2222',memberId:'HC-00123456',note:'',status:'ordered',createdAt:'2026-06-06 14:05'},
+      {id:'d3',orderNo:'KJ-10003',productName:'ブリヂストン カジュナ 27インチ',maker:'ブリヂストン',customerName:'伊藤 三郎',tel:'070-2222-3333',memberId:'',note:'シルバー色',status:'waiting',createdAt:'2026-06-07 09:11'},
+    ];
+    saveOrders(demo);
+  }
+})();
+
+// ===== STAFF FUNCTIONS =====
+function doSearch(v){
+  const q=v.trim();
+  const el=document.getElementById('result-area');
+  if(!q){el.innerHTML='';return;}
+  const f=PRODUCTS.filter(p=>p.name.includes(q)||p.maker.includes(q));
+  if(f.length===0){
+    el.innerHTML=`<div class="card"><div class="card-body"><div class="no-result"><div style="font-size:28px;margin-bottom:8px">🔍</div><div>「${q}」は在庫にありません</div><div style="margin-top:4px;font-size:12px;color:#888">客注（取り寄せ）で対応できます</div></div><button class="btn btn-order" onclick="startOrder('${q.replace(/'/g,"\\'")}',true)" style="margin-top:8px">この商品を客注登録する</button></div></div>`;
+  } else {
+    el.innerHTML='<div class="product-list">'+f.map(p=>{
+      const sc=p.stock==='in'?'status-in':p.stock==='low'?'status-low':'status-out';
+      const sl=p.stock==='in'?'在庫あり':p.stock==='low'?'残りわずか':'在庫なし';
+      return `<div class="product-item" onclick="selectProduct(${p.id})"><div class="product-thumb">${p.icon}</div><div class="product-info"><div class="product-name">${p.name}</div><div class="product-sub">${p.maker} / ${p.price}</div></div><span class="product-status ${sc}">${sl}</span></div>`;
+    }).join('')+'</div>';
+  }
+}
+function selectProduct(id){
+  const p=PRODUCTS.find(x=>x.id===id);
+  st.product=p;
+  st.isOrder=p.stock!=='in';
+  startOrder(p.name,st.isOrder);
+}
+function startOrder(name,isOrder){
+  if(!st.product)st.product={name,maker:'（確認中）',price:'—',stock:'out',icon:'🔍'};
+  st.isOrder=isOrder;
+  const b=document.getElementById('s2-badge');
+  b.textContent=isOrder?'客注':'販売';
+  b.className='header-badge '+(isOrder?'badge-order':'badge-sale');
+  st.cType=null;st.cData={};
+  ['type-id','type-noid'].forEach(x=>document.getElementById(x).classList.remove('selected'));
+  document.getElementById('form-id').style.display='none';
+  document.getElementById('form-noid').style.display='none';
+  document.getElementById('member-id').value='';
+  document.getElementById('member-result').innerHTML='';
+  document.getElementById('name-input').value='';
+  document.getElementById('tel-input').value='';
+  document.getElementById('note-input').value='';
+  document.getElementById('btn-next2').disabled=true;
+  goTo('s2');
+}
+function selectType(t){
+  st.cType=t;
+  document.getElementById('type-id').classList.toggle('selected',t==='id');
+  document.getElementById('type-noid').classList.toggle('selected',t==='noid');
+  document.getElementById('form-id').style.display=t==='id'?'block':'none';
+  document.getElementById('form-noid').style.display=t==='noid'?'block':'none';
+  if(t==='noid')checkNoid();
+  else document.getElementById('btn-next2').disabled=true;
+}
+function searchMember(){
+  const id=document.getElementById('member-id').value.trim();
+  const m=MEMBERS[id];
+  const el=document.getElementById('member-result');
+  if(m){
+    st.cData={id,...m};
+    el.innerHTML=`<div class="customer-found"><div style="font-size:18px">✅</div><div><div class="customer-found-name">${m.name}</div><div class="customer-found-sub">${id} / ${m.rank} / ${m.tel}</div></div></div>`;
+    document.getElementById('btn-next2').disabled=false;
+  } else {
+    st.cData={};
+    el.innerHTML=`<div class="warn-box">⚠️ IDが見つかりません。IDをご確認いただくか、IDなしで登録してください。</div>`;
+    document.getElementById('btn-next2').disabled=true;
+  }
+}
+function checkNoid(){
+  const n=document.getElementById('name-input').value.trim();
+  const t=document.getElementById('tel-input').value.trim();
+  document.getElementById('btn-next2').disabled=!(n&&t);
+}
+function buildRows(product,cType,cData,isOrder){
+  let rows=`<tr><td>対応種別</td><td>${isOrder?'客注（取り寄せ）':'店頭販売'}</td></tr><tr><td>商品名</td><td>${product.name}</td></tr><tr><td>メーカー</td><td>${product.maker}</td></tr>`;
+  if(cType==='id'){rows+=`<tr><td>会員ID</td><td>${cData.id}</td></tr><tr><td>お名前</td><td>${cData.name}</td></tr><tr><td>電話番号</td><td>${cData.tel}</td></tr>`;}
+  else{rows+=`<tr><td>お名前</td><td>${cData.name}</td></tr><tr><td>電話番号</td><td>${cData.tel}</td></tr>`;if(cData.note)rows+=`<tr><td>備考</td><td>${cData.note}</td></tr>`;}
+  return rows;
+}
+function goToConfirm(){
+  if(st.cType==='noid'){st.cData={name:document.getElementById('name-input').value.trim(),tel:document.getElementById('tel-input').value.trim(),note:document.getElementById('note-input').value.trim()};}
+  document.getElementById('confirm-table').innerHTML=buildRows(st.product,st.cType,st.cData,st.isOrder);
+  goTo('s3');
+}
+function register(){
+  const num='KJ-'+String(Math.floor(Math.random()*90000+10000));
+  const order={
+    id:'o'+Date.now(),
+    orderNo:num,
+    productName:st.product.name,
+    maker:st.product.maker,
+    customerName:st.cType==='id'?st.cData.name:st.cData.name,
+    tel:st.cType==='id'?st.cData.tel:st.cData.tel,
+    memberId:st.cType==='id'?st.cData.id:'',
+    note:st.cData.note||'',
+    status:'waiting',
+    createdAt:new Date().toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).replace(/\//g,'-'),
+  };
+  addOrder(order);
+  document.getElementById('order-number').textContent=num;
+  document.getElementById('complete-table').innerHTML=buildRows(st.product,st.cType,st.cData,st.isOrder);
+  goTo('s4');
+}
+function goTo(id){
+  document.querySelectorAll('#mode-staff .screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function reset(){
+  st={product:null,isOrder:false,cType:null,cData:{}};
+  document.getElementById('search-input').value='';
+  document.getElementById('result-area').innerHTML='';
+  goTo('s1');
+}
+
+// ===== ADMIN FUNCTIONS =====
+const STATUS_LABEL={waiting:'受付待ち',ordered:'発注済み',arrived:'入荷済み',done:'引渡し完了'};
+const STATUS_CLASS={waiting:'sb-waiting',ordered:'sb-ordered',arrived:'sb-arrived',done:'sb-done'};
+const STATUS_NEXT={waiting:'ordered',ordered:'arrived',arrived:'done'};
+const STATUS_NEXT_LABEL={waiting:'発注済みにする',ordered:'入荷済みにする',arrived:'引渡し完了にする'};
+
+function renderAdmin(){
+  const orders=getOrders();
+  const filtered=currentFilter==='all'?orders:orders.filter(o=>o.status===currentFilter);
+  document.getElementById('order-count').textContent=filtered.length+'件';
+  const kpi={waiting:0,ordered:0,arrived:0,done:0};
+  orders.forEach(o=>kpi[o.status]=(kpi[o.status]||0)+1);
+  ['waiting','ordered','arrived','done'].forEach(k=>document.getElementById('kpi-'+k).textContent=kpi[k]||0);
+  const tbody=document.getElementById('orders-tbody');
+  if(filtered.length===0){tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:24px;color:#aaa">該当する客注はありません</td></tr>`;return;}
+  tbody.innerHTML=filtered.map(o=>`
+    <tr>
+      <td><strong>${o.orderNo}</strong></td>
+      <td style="color:#888;white-space:nowrap">${o.createdAt}</td>
+      <td>${o.productName}</td>
+      <td>${o.customerName}${o.memberId?`<br><span style="font-size:11px;color:#888">${o.memberId}</span>`:''}</td>
+      <td style="white-space:nowrap">${o.tel}</td>
+      <td><span class="status-badge ${STATUS_CLASS[o.status]}">${STATUS_LABEL[o.status]}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-secondary btn-sm" onclick="openModal('${o.id}')">詳細</button>
+          ${STATUS_NEXT[o.status]?`<button class="btn btn-primary btn-sm" onclick="quickAdvance('${o.id}')">${STATUS_NEXT_LABEL[o.status]}</button>`:`<span style="font-size:11px;color:#aaa">完了</span>`}
+        </div>
+      </td>
+    </tr>`).join('');
+}
+function filterOrders(f,btn){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAdmin();
+}
+function quickAdvance(id){
+  const orders=getOrders();
+  const o=orders.find(x=>x.id===id);
+  if(o&&STATUS_NEXT[o.status]){o.status=STATUS_NEXT[o.status];saveOrders(orders);renderAdmin();}
+}
+function openModal(id){
+  currentModalId=id;
+  const o=getOrders().find(x=>x.id===id);
+  if(!o)return;
+  document.getElementById('modal-content').innerHTML=`
+    <div class="modal-row"><span class="modal-row-label">受付番号</span><span class="modal-row-val">${o.orderNo}</span></div>
+    <div class="modal-row"><span class="modal-row-label">受付日時</span><span class="modal-row-val">${o.createdAt}</span></div>
+    <div class="modal-row"><span class="modal-row-label">商品名</span><span class="modal-row-val">${o.productName}</span></div>
+    <div class="modal-row"><span class="modal-row-label">メーカー</span><span class="modal-row-val">${o.maker}</span></div>
+    <div class="modal-row"><span class="modal-row-label">顧客名</span><span class="modal-row-val">${o.customerName}</span></div>
+    <div class="modal-row"><span class="modal-row-label">電話番号</span><span class="modal-row-val">${o.tel}</span></div>
+    ${o.memberId?`<div class="modal-row"><span class="modal-row-label">会員ID</span><span class="modal-row-val">${o.memberId}</span></div>`:''}
+    ${o.note?`<div class="modal-row"><span class="modal-row-label">備考</span><span class="modal-row-val">${o.note}</span></div>`:''}
+    <div class="modal-row"><span class="modal-row-label">ステータス</span><span class="status-badge ${STATUS_CLASS[o.status]}">${STATUS_LABEL[o.status]}</span></div>
+  `;
+  const nb=document.getElementById('modal-next-btn');
+  if(STATUS_NEXT[o.status]){nb.style.display='block';nb.textContent=STATUS_NEXT_LABEL[o.status]+' →';}
+  else{nb.style.display='none';}
+  document.getElementById('detail-modal').classList.add('open');
+}
+function closeModal(){document.getElementById('detail-modal').classList.remove('open');}
+function advanceStatus(){
+  const orders=getOrders();
+  const o=orders.find(x=>x.id===currentModalId);
+  if(o&&STATUS_NEXT[o.status]){o.status=STATUS_NEXT[o.status];saveOrders(orders);renderAdmin();closeModal();}
+}
+
+// ===== MODE SWITCH =====
+function switchMode(mode){
+  ['staff','admin','arch'].forEach(m=>{
+    document.getElementById('mode-'+m).style.display=m===mode?'block':'none';
+    document.getElementById('nav-'+m).classList.toggle('active',m===mode);
+  });
+  if(mode==='admin')renderAdmin();
+}
+</script>
+</body>
+</html>
